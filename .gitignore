@@ -1,0 +1,30 @@
+# ---- secrets (never commit) ----
+.credentials
+.session_secret
+.azure.env
+azure.env
+vendor_3366.conf
+vendor_3366_prefix.conf
+spam_allow_ani.txt
+spam_allow_ip.txt
+spam_force_ani.txt
+spam_force_ip.txt
+freeswitch/directory/3366.xml
+# ---- runtime data / PII ----
+recordings/
+transcripts/
+peaks/
+spam_events/
+spam_decisions/
+spam_reputation_versions/
+backups/
+# ---- vendored binaries (reinstall from FreeSWITCH/ffmpeg) ----
+lib/
+bin/
+fs/
+# ---- python / misc ----
+__pycache__/
+*.pyc
+*.bak
+app.py.bak.*
+*.before-*

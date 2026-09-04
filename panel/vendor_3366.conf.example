@@ -1,0 +1,2 @@
+# Upstream vendor SIP peer for prefix 3366, host:port. One line. Read live by the Lua.
+203.0.113.10:5060

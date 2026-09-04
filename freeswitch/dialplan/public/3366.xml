@@ -1,0 +1,15 @@
+<include>
+        <extension name="Prefix_3366">
+                <condition field="destination_number" expression="^3366(\d+)$">
+                        <action application="export" data="destination_number_ori=$1"/>
+                        <action application="set" data="delay=${expr(randomize(&x);ceil(random(674,4049,&x)))}" inline="true"/>
+                        <action application="sleep" data="${delay}"/>
+                        <action application="ring_ready"/>
+                        <action application="set" data="randomms=${expr(randomize(&x);ceil(random(5893,13385,&x)))}" inline="true"/>
+                        <action application="set" data="samples_for_duration=${expr(${randomms} * 8)}" inline="true"/>
+                        <action application="set" data="start_sample=${expr(480000 - ${samples_for_duration})}" inline="true"/>
+                        <action application="playback" data="/opt/files/ringingmono.wav@@${start_sample}"/>
+                        <action application="lua" data="record_and_bridge_3366.lua"/>
+                </condition>
+        </extension>
+</include>

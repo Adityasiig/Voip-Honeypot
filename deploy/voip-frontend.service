@@ -1,0 +1,42 @@
+[Unit]
+Description=VoIP 3366 recordings & vendor control panel
+After=network.target
+
+[Service]
+Type=simple
+Environment=VOIP_PORT=8080
+Environment=VOIP_USER=admin
+ExecStart=/usr/bin/python3 /opt/voip/app.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+User=voip-panel
+Group=voip-panel
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectControlGroups=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectKernelLogs=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RemoveIPC=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_INET AF_INET6
+ReadWritePaths=/opt/voip/recordings /opt/voip/transcripts /opt/voip/vendor_3366.conf /opt/voip/.credentials /opt/voip/.session_secret /opt/voip/peaks
