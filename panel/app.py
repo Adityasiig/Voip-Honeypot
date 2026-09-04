@@ -11,6 +11,8 @@ REC_DIR     = "/opt/voip/recordings"
 VENDOR_FILE = "/opt/voip/vendor_3366.conf"
 SECRET_FILE = "/opt/voip/.session_secret"
 CRED_FILE   = "/opt/voip/.credentials"
+DNC_FILE     = "/opt/voip/dnc_numbers.txt"       # DIDs on the National DNC Registry (one E.164/10-digit per line)
+CONSENT_FILE = "/opt/voip/consent_records.txt"   # documented prior express consent: "ANI" or "ANI,DNI" per line
 PORT        = int(os.environ.get("VOIP_PORT", "8080"))
 AUTH_USER   = os.environ.get("VOIP_USER", "admin")
 AUTH_PASS   = os.environ.get("VOIP_PASS", "changeme")
@@ -847,7 +849,7 @@ def _load_content_safety_ai():
                 cfg.get("AZURE_CONTENT_SAFETY_ENDPOINT") or cfg.get("CONTENT_SAFETY_ENDPOINT") or "")
     return {"key": key, "endpoint": endpoint, "api_version": "2024-09-01"}
 CONTENT_SAFETY_AI = _load_content_safety_ai()
-ANALYSIS_VERSION = 5
+ANALYSIS_VERSION = 6
 # sha256 of an empty transcript — the fingerprint of a no-speech recording.
 # Both new no-speech markers and legacy scored-but-silent sidecars carry this,
 # so reporting can exclude them uniformly.
@@ -962,6 +964,81 @@ def _rule_risk_analysis(text):
         level = "low"
         assessment = "No clear fraud indicators detected in the transcript."
     return {"risk_level": level, "risk_score": score, "assessment": assessment, "red_flags": flags}
+
+
+# ---------- DNC / consent (TCPA / FCC compliance) ----------
+# Under TCPA 47 CFR 64.1200(d) a caller must honor a do-not-call request; ignoring
+# one is a violation and a strong ITG-traceback trigger. These match the CALLED
+# party asserting they never consented / want the calls to stop.
+CONSENT_WITHDRAWAL_PATTERNS = (
+    r"\b(?:do not|don['’]?t|stop|quit|please stop)\s+call(?:ing)?(?:\s+me)?(?:\s+(?:again|back|anymore|any more))?\b",
+    r"\btake me off (?:your |the )?(?:call(?:ing)? )?list\b",
+    r"\bremove (?:me|my number) from (?:your |the )?(?:call(?:ing)? )?list\b",
+    r"\bput me on (?:your |the )?do[- ]not[- ]call list\b",
+    r"\bi (?:did not|didn['’]?t|never) (?:give|gave|provide|provided|sign up for) (?:my )?consent\b",
+    r"\bi (?:do not|don['’]?t) consent\b",
+    r"\bi never (?:signed up|asked|agreed) (?:for|to)\b",
+    r"\b(?:no longer wish|don['’]?t want) to (?:receive|be called|get) (?:these |any )?calls\b",
+    r"\bunsubscribe\b",
+    r"\bhow did you get (?:my|this) number\b",
+)
+
+def _consent_withdrawal_scan(text):
+    """Return spoken do-not-call / consent-withdrawal assertions in the transcript."""
+    lowered = (text or "").lower()
+    signals = []
+    for pat in CONSENT_WITHDRAWAL_PATTERNS:
+        m = re.search(pat, lowered, flags=re.I)
+        if m:
+            signals.append({"title": "Do-not-call / consent-withdrawal request",
+                            "evidence": _evidence_excerpt(text, m.start(), m.end())})
+            if len(signals) >= 4:
+                break
+    return signals
+
+
+def _normalize_number(raw):
+    d = re.sub(r"\D", "", str(raw or ""))
+    if len(d) == 11 and d.startswith("1"):
+        d = d[1:]
+    return d if len(d) >= 10 else ""
+
+_LIST_CACHE = {}   # path -> (mtime, frozenset)
+def _load_number_set(path, pair=False):
+    """Load a newline-delimited number list into a set (mtime-cached). When
+    pair=True, 'ANI,DNI' lines store both an 'ANI|DNI' key (consent scoped to a
+    specific DID) and a bare 'ANI' key (consent granted for any DID)."""
+    try:
+        mt = os.path.getmtime(path)
+    except OSError:
+        _LIST_CACHE.pop(path, None)
+        return frozenset()
+    hit = _LIST_CACHE.get(path)
+    if hit and hit[0] == mt:
+        return hit[1]
+    out = set()
+    try:
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                line = line.split("#", 1)[0].strip()
+                if not line:
+                    continue
+                if pair and "," in line:
+                    a, d = line.split(",", 1)
+                    a, d = _normalize_number(a), _normalize_number(d)
+                    if a and d:
+                        out.add(a + "|" + d)
+                    if a:
+                        out.add(a)
+                else:
+                    n = _normalize_number(line)
+                    if n:
+                        out.add(n)
+    except OSError:
+        pass
+    frozen = frozenset(out)
+    _LIST_CACHE[path] = (mt, frozen)
+    return frozen
 
 
 def _azure_text_feature(kind, text, parameters=None):
@@ -1172,6 +1249,7 @@ def analyze_transcript(fn, text, force=False):
         "risk_score": rules["risk_score"],
         "assessment": rules["assessment"],
         "red_flags": rules["red_flags"],
+        "consent_signals": _consent_withdrawal_scan(text),
         "azure": enrichment,
         "engine": ("azure-openai+rules" if ai_summary else
                    "azure-language+rules" if language_summary else "evidence-rules"),
@@ -1188,6 +1266,51 @@ def analyze_transcript(fn, text, force=False):
     except OSError:
         pass
     return result
+
+def _dnc_consent_component(rec, analysis):
+    """DNC-registry + prior-express-consent check (TCPA / FCC).
+
+    dni = the called number (a honeypot DID); ani = the calling party. A call to a
+    DNC-registered DID without recorded consent is a presumptive Do-Not-Call
+    violation; a spoken do-not-call request the caller ignores is a 47 CFR
+    64.1200(d) violation and a traceback trigger.
+    Returns (score|None, detail, findings). None => nothing to assess (excluded
+    from the coverage-weighted blend so it never dilutes the score)."""
+    dnc = _load_number_set(DNC_FILE)
+    consent = _load_number_set(CONSENT_FILE, pair=True)
+    signals = analysis.get("consent_signals") or []
+    ani = _normalize_number(rec.get("ani"))
+    dni = _normalize_number(rec.get("dni"))
+
+    consented = bool(ani and (ani in consent or (dni and (ani + "|" + dni) in consent)))
+    dnc_listed = bool(dni and dni in dnc)
+    withdrawal = bool(signals)
+
+    if not dnc and not withdrawal:
+        return None, "No DNC registry loaded and no consent-withdrawal request detected", []
+    if consented:
+        return 0, "Prior express consent on record for this caller", [
+            {"source": "Compliance (DNC/TCPA)", "severity": "info",
+             "title": "Caller has documented prior express consent"}]
+
+    score, findings, bits = 0, [], []
+    if dnc_listed:
+        score = max(score, 70)
+        bits.append("called a DNC-registered number without consent")
+        findings.append({"source": "Compliance (DNC/TCPA)", "severity": "high",
+                         "title": "Call placed to a Do-Not-Call-registered number without recorded consent"})
+    if withdrawal:
+        score = max(score, 85)
+        bits.append("caller was told to stop / consent withdrawn")
+        for s in signals[:3]:
+            findings.append({"source": "Compliance (TCPA 64.1200(d))", "severity": "high",
+                             "title": s.get("title") or "Do-not-call request in call",
+                             "evidence": [s["evidence"]] if s.get("evidence") else []})
+    if not bits:
+        return 0, "Called number not on the loaded DNC registry; no withdrawal request detected", []
+    detail = "; ".join(bits)
+    return score, detail[:1].upper() + detail[1:], findings
+
 
 def _identity_component(stir):
     status, attest = stir.get("status") or "legacy", stir.get("attestation") or ""
@@ -1253,8 +1376,10 @@ def operational_risk(rec, analysis, recordings=None):
     traffic_score, traffic_detail, traffic_findings = _traffic_component(rec, recordings)
     data_score, data_detail, data_findings = _data_protection_component(analysis)
     safety_score, safety_detail, safety_findings = _content_safety_component(analysis)
+    dnc_score, dnc_detail, dnc_findings = _dnc_consent_component(rec, analysis)
     content_score = int(analysis.get("risk_score") or 0)
     findings.extend(traffic_findings)
+    findings.extend(dnc_findings)
     findings.extend({"source":"Transcript","severity":f.get("severity","medium"),"title":f.get("title","Review indicator")} for f in (analysis.get("red_flags") or []))
     findings.extend(data_findings)
     findings.extend(safety_findings)
@@ -1262,6 +1387,7 @@ def operational_risk(rec, analysis, recordings=None):
       {"key":"identity","label":"Caller identity","score":identity_score,"weight":25,"available":identity_score is not None,"detail":identity_detail},
       {"key":"traffic","label":"Traffic behavior","score":traffic_score,"weight":20,"available":True,"detail":traffic_detail},
       {"key":"content","label":"Conversation fraud risk","score":content_score,"weight":30,"available":True,"detail":analysis.get("assessment") or "Transcript screening"},
+      {"key":"dnc","label":"DNC / consent (TCPA)","score":dnc_score,"weight":18,"available":dnc_score is not None,"detail":dnc_detail},
       {"key":"data","label":"Data protection","score":data_score,"weight":10,"available":data_score is not None,"detail":data_detail},
       {"key":"moderation","label":"Azure harmful-content moderation","score":safety_score,"weight":15,"available":safety_score is not None,"detail":safety_detail},
     ]
@@ -1273,6 +1399,7 @@ def operational_risk(rec, analysis, recordings=None):
     if content_score >= 80: score = max(score, 70)
     if traffic_score >= 80: score = max(score, 45)
     if safety_score is not None and safety_score >= 67: score = max(score, 55)
+    if dnc_score is not None and dnc_score >= 80: score = max(score, 65)
     level = "critical" if score >= 70 else "high" if score >= 45 else "moderate" if score >= 20 else "low"
     return {"score":score,"level":level,"components":components,"findings":findings[:16],"coverage":coverage,"model":"operational-risk-v2-content-safety","disclaimer":"Operational risk indicator; not an FCC certification or legal determination."}
 

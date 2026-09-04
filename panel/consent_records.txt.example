@@ -1,0 +1,8 @@
+# Documented prior express consent / established business relationship (EBR).
+# One entry per line:
+#   ANI            -> consent for calls to any DID
+#   ANI,DNI        -> consent scoped to that specific DID
+# A caller matched here is scored 0 on the DNC/consent axis.
+# Example:
+# 18005551234
+# 17185550000,16308934664

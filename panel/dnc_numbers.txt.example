@@ -1,0 +1,7 @@
+# National Do-Not-Call Registry numbers (honeypot bait DIDs registered at donotcall.gov).
+# One number per line, 10-digit or +1 E.164. Lines after # are ignored.
+# Any answered solicitation call to a DID listed here, without a matching entry
+# in consent_records.txt, is scored as a presumptive DNC violation.
+# Example:
+# 16308934664
+# +1 (949) 305-5500
