@@ -1,0 +1,40 @@
+{
+ "companies": [
+  {
+   "id": "default",
+   "name": "Default customer",
+   "enabled": true,
+   "source_ips": [
+    "38.65.82.54"
+   ],
+   "did_prefixes": [],
+   "vendor": "38.65.82.53:5060",
+   "vendor_prefix": "9896",
+   "notes": "",
+   "azure": {},
+   "dnc": "",
+   "consent": "",
+   "allow_ani": "",
+   "force_ani": "",
+   "created": 1789060212,
+   "updated": 1789062733
+  },
+  {
+   "id": "abctelle",
+   "name": "ABCTELLE",
+   "enabled": true,
+   "source_ips": [],
+   "did_prefixes": [],
+   "vendor": "",
+   "vendor_prefix": "",
+   "notes": "",
+   "dnc": "",
+   "consent": "",
+   "allow_ani": "",
+   "force_ani": "",
+   "created": 1789061620,
+   "updated": 1789061620
+  }
+ ],
+ "enforce_acl": false
+}

@@ -1,0 +1,5 @@
+{"ts": 1789067206, "service": "speech", "company": "default", "units": 3.22, "file": "3366_20260908_084754_REDACTED_ANI_REDACTED_DNI_<uuid>.wav"}
+{"ts": 1789067206, "service": "language", "company": "default", "units": 8.0, "kind": "SentimentAnalysis"}
+{"ts": 1789067207, "service": "language", "company": "default", "units": 8.0, "kind": "PiiEntityRecognition"}
+{"ts": 1789067208, "service": "content_safety", "company": "default", "units": 8.0}
+{"ts": 1789067208, "service": "language_summary", "company": "default", "units": 8.0, "kind": "summary"}

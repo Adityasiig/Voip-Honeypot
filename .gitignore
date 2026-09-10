@@ -2,9 +2,9 @@
 recordings/
 transcripts/
 peaks/
-companies/companies.json
-companies/users.json
-companies/usage/
+# companies/*.json config is tracked; only per-call usage (contains PII phone numbers) is excluded
+companies/usage/*.jsonl
+!companies/usage/*.example.jsonl
 .credentials
 .session_secret
 .azure.env

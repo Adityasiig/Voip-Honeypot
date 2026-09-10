@@ -1,0 +1,72 @@
+{
+ "speech": {
+  "price": 0.006,
+  "source": {
+   "meter": "Fast Transcription Speech To Text",
+   "unit": "1 Hour",
+   "retail": 0.36,
+   "region": "eastus"
+  },
+  "fetched_at": 1789067704
+ },
+ "language": {
+  "price": 0.001,
+  "source": {
+   "meter": "Standard Text Records",
+   "unit": "1K",
+   "retail": 1.0,
+   "region": "eastus"
+  },
+  "fetched_at": 1789067704
+ },
+ "language_summary": {
+  "price": 0.002,
+  "source": {
+   "meter": "Standard Summarization Text Records",
+   "unit": "1K",
+   "retail": 2.0,
+   "region": "eastus"
+  },
+  "fetched_at": 1789067704
+ },
+ "content_safety": {
+  "price": 0.000375,
+  "source": {
+   "meter": "Standard Text Records",
+   "unit": "1K",
+   "retail": 0.375,
+   "region": "eastus"
+  },
+  "fetched_at": 1789067704
+ },
+ "translator": {
+  "price": 10.0,
+  "source": {
+   "meter": "S1 Characters",
+   "unit": "1M",
+   "retail": 10.0,
+   "region": "eastus"
+  },
+  "fetched_at": 1789067704
+ },
+ "openai_in": {
+  "price": 0.00015,
+  "source": {
+   "meter": "gpt-4o-mini-0718-Inp-glbl Tokens",
+   "unit": "1K",
+   "retail": 0.00015,
+   "region": "eastus"
+  },
+  "fetched_at": 1789067704
+ },
+ "openai_out": {
+  "price": 0.0006,
+  "source": {
+   "meter": "gpt-4o-mini-0718-Outp-glbl Tokens",
+   "unit": "1K",
+   "retail": 0.0006,
+   "region": "eastus"
+  },
+  "fetched_at": 1789067704
+ }
+}
