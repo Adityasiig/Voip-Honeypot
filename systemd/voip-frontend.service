@@ -1,0 +1,14 @@
+[Unit]
+Description=VoIP 3366 recordings & vendor control panel
+After=network.target
+
+[Service]
+Type=simple
+Environment=VOIP_PORT=8080
+Environment=VOIP_USER=admin
+ExecStart=/usr/bin/python3 /opt/voip/app.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

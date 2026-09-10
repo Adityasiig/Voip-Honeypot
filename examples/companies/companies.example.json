@@ -1,0 +1,22 @@
+{
+ "enforce_acl": false,
+ "companies": [
+  {
+   "id": "default",
+   "name": "Default customer",
+   "enabled": true,
+   "source_ips": [
+    "203.0.113.10"
+   ],
+   "did_prefixes": [],
+   "vendor": "203.0.113.20:5060",
+   "vendor_prefix": "9896",
+   "notes": "example",
+   "dnc": "",
+   "consent": "",
+   "allow_ani": "",
+   "force_ani": "",
+   "azure": {}
+  }
+ ]
+}

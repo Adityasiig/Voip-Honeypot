@@ -1,0 +1,2 @@
+#!/bin/bash
+exec /opt/voip/lib/ld-linux-x86-64.so.2 --library-path /opt/voip/lib /opt/voip/bin/fs_cli "$@"

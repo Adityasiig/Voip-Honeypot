@@ -1,0 +1,86 @@
+<configuration name="switch.conf" description="Core Configuration - Optimized for High Concurrency">
+
+  <cli-keybindings>
+    <key name="1" value="help"/>
+    <key name="2" value="status"/>
+    <key name="3" value="show channels"/>
+    <key name="4" value="show calls"/>
+    <key name="5" value="sofia status"/>
+    <key name="6" value="reloadxml"/>
+    <key name="7" value="console loglevel 0"/>
+    <key name="8" value="console loglevel 7"/>
+    <key name="9" value="sofia status profile internal"/>
+    <key name="10" value="sofia profile internal siptrace on"/>
+    <key name="11" value="sofia profile internal siptrace off"/>
+    <key name="12" value="version"/>
+  </cli-keybindings>
+
+  <default-ptimes>
+  </default-ptimes>
+
+  <settings>
+    <!-- Colorize the Console -->
+    <param name="colorize-console" value="true"/>
+
+    <!-- Include full timestamps in dialplan logs -->
+    <param name="dialplan-timestamps" value="false"/>
+
+    <!-- =============================================
+         OPTIMIZED: High-concurrency tuning
+         Previous: max-sessions=5000, sps=130, loglevel=debug
+         ============================================= -->
+
+    <!-- Maximum number of simultaneous DB handles open -->
+    <param name="max-db-handles" value="50"/>
+    <!-- Maximum number of seconds to wait for a new DB handle before failing -->
+    <param name="db-handle-timeout" value="10"/>
+
+    <!-- Max sessions: 15000 per container × 4 = 60K total capacity
+         Production handles 1,448 peak, so 15K gives 10× headroom per node -->
+    <param name="max-sessions" value="8000"/>
+
+    <!-- Sessions per second: 500 per container × 4 = 2000 total
+         Production peaks at 97 cps, this gives 20× headroom -->
+    <param name="sessions-per-second" value="1000"/>
+
+    <!-- CRITICAL: Reduced from debug → warning
+         debug logging at 1000+ calls = massive I/O overhead
+         Production uses: loglevel=warning -->
+    <param name="loglevel" value="warning"/>
+
+    <!-- SQL Buffer: Increased from default 32KB → 1MB
+         At high concurrency, FS batches SQL writes; larger buffer = fewer flushes -->
+    <param name="db-pre-trans-execute" value="PRAGMA busy_timeout=5000;"/>
+    <param name="sql-buffer-len" value="1m"/>
+    <!-- Maximum SQL Buffer length must be greater than sql-buffer-len -->
+    <param name="max-sql-buffer-len" value="2m"/>
+
+    <!-- DTMF defaults (safe production values) -->
+    <param name="min-dtmf-duration" value="400"/>
+    <param name="max-dtmf-duration" value="192000"/>
+    <param name="default-dtmf-duration" value="2000"/>
+
+    <param name="mailer-app" value="sendmail"/>
+    <param name="mailer-app-args" value="-t"/>
+    <param name="dump-cores" value="yes"/>
+
+    <!-- Enable high-precision timer (matches production sysctl tuning)
+         Reduces jitter by using clock_nanosleep() instead of select() -->
+    <param name="enable-clock-nanosleep" value="true"/>
+
+    <!-- Enable monotonic timing to prevent clock-drift issues under load -->
+    <param name="enable-monotonic-timing" value="true"/>
+
+    <!-- RTP port range: 16384-48000 gives 31,616 ports = 15,808 concurrent calls per container
+         RTPEngine uses 10000-16383 (no collision) -->
+    <param name="rtp-recv-buffer-size" value="1048576"/>
+    <param name="rtp-send-buffer-size" value="1048576"/>
+    <param name="rtp-start-port" value="16384"/>
+    <param name="rtp-end-port" value="32767"/>
+
+    <!-- Test each port before allocating — prevents collisions with leaked ports -->
+    <param name="rtp-port-usage-robustness" value="true"/>
+
+  </settings>
+
+</configuration>

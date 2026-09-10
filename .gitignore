@@ -1,0 +1,19 @@
+# runtime data and secrets are never committed
+recordings/
+transcripts/
+peaks/
+companies/companies.json
+companies/users.json
+companies/usage/
+.credentials
+.session_secret
+.azure.env
+*.bak*
+*.orig
+*.rej
+__pycache__/
+*.pyc
+spam_events/
+spam_decisions/
+spam_reputation_versions/
+spam_reputation_current

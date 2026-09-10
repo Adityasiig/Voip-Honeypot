@@ -1,0 +1,2 @@
+# Refresh after the FTC weekday publication window (17:30 UTC = 10:30 Pacific; server clock is UTC).
+30 17 * * 1-5 root /usr/local/sbin/update_voip_spam_reputation >>/var/log/voip-spam-reputation.log 2>&1

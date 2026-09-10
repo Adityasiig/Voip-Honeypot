@@ -1,0 +1,28 @@
+[Unit]
+Description=FreeSWITCH VoIP Server
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+User=root
+Group=root
+Environment="HOME=/var/lib/freeswitch"
+ExecStartPre=/bin/mkdir -p /run/freeswitch
+ExecStart=/usr/local/bin/freeswitch \
+    -conf /etc/freeswitch \
+    -log /var/log/freeswitch \
+    -db /var/lib/freeswitch/db \
+    -run /run/freeswitch \
+    -base /var/lib/freeswitch \
+    -nonat -nc
+PIDFile=/run/freeswitch/freeswitch.pid
+TimeoutStartSec=120
+Restart=on-failure
+RestartSec=10
+LimitNOFILE=1048576
+LimitNPROC=65536
+LimitCORE=infinity
+
+[Install]
+WantedBy=multi-user.target

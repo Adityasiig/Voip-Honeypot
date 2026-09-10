@@ -1,0 +1,63 @@
+#!/bin/sh
+set -eu
+
+base_dir=/opt/voip
+versions_dir="$base_dir/spam_reputation_versions"
+stamp=$(date -u +%Y%m%dT%H%M%SZ)
+build_dir="$versions_dir/$stamp"
+work_dir=$(mktemp -d /tmp/voip-spam-update.XXXXXX)
+aggregate="$work_dir/complaints.tsv"
+trap 'rm -rf "$work_dir"' EXIT HUP INT TERM
+
+mkdir -p "$versions_dir" "$build_dir"
+: > "$aggregate"
+
+day=0
+downloaded=0
+while [ "$day" -le 30 ]; do
+    complaint_date=$(date -u -d "$day days ago" +%Y-%m-%d)
+    url="https://search.ftc.gov/sites/default/files/DNC_Complaint_Numbers_${complaint_date}.csv"
+    csv="$work_dir/$complaint_date.csv"
+    if curl -LfsS --connect-timeout 10 --max-time 90 "$url" -o "$csv"; then
+        awk -F',' 'NR > 1 {
+            number=$1
+            gsub(/[^0-9]/, "", number)
+            robo=toupper($NF)
+            gsub(/\r/, "", robo)
+            if (length(number) >= 10 && length(number) <= 15)
+                print number "\t" (robo ~ /^Y/ ? 1 : 0) "\t" substr($2, 1, 10)
+        }' "$csv" >> "$aggregate"
+        downloaded=$((downloaded + 1))
+    fi
+    day=$((day + 1))
+done
+
+if [ "$downloaded" -eq 0 ] || [ ! -s "$aggregate" ]; then
+    echo "No FTC complaint files downloaded; existing reputation retained." >&2
+    exit 1
+fi
+
+LC_ALL=C sort -k1,1 "$aggregate" | awk -v out="$build_dir" '
+function flush() {
+    if (number == "") return
+    prefix=substr(number, 1, 3)
+    file=out "/" prefix ".tsv"
+    print number "\t" complaints "\t" robocalls "\t" last_seen >> file
+    close(file)
+}
+{
+    if ($1 != number) {
+        flush()
+        number=$1; complaints=0; robocalls=0; last_seen=""
+    }
+    complaints++
+    robocalls += $2
+    if ($3 > last_seen) last_seen=$3
+}
+END { flush() }
+'
+
+printf 'generated_at=%s\ndays=31\nfiles_downloaded=%s\n' "$stamp" "$downloaded" > "$build_dir/manifest"
+ln -sfn "$build_dir" "$base_dir/spam_reputation_current.new"
+mv -Tf "$base_dir/spam_reputation_current.new" "$base_dir/spam_reputation_current"
+echo "FTC reputation update complete: $build_dir ($downloaded daily files)"

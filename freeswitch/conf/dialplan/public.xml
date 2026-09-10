@@ -1,0 +1,398 @@
+<!--
+    NOTICE:
+
+    This context is usually accessed via the external sip profile listening on port 5080.
+    
+    It is recommended to have separate inbound and outbound contexts.  Not only for security
+    but clearing up why you would need to do such a thing.  You don't want outside un-authenticated
+    callers hitting your default context which allows dialing calls thru your providers and results 
+    in Toll Fraud.
+-->
+
+<!-- http://wiki.freeswitch.org/wiki/Dialplan_XML -->
+<include>
+  <context name="public">
+
+    <extension name="unloop">
+      <condition field="${unroll_loops}" expression="^true$"/>
+      <condition field="${sip_looped_call}" expression="^true$">
+	<action application="deflect" data="${destination_number}"/>
+      </condition>
+    </extension>
+    <!--
+	Tag anything pass thru here as an outside_call so you can make sure not
+	to create any routing loops based on the conditions that it came from 
+	the outside of the switch.  
+    -->
+    <extension name="outside_call" continue="true">
+      <condition>
+	<action application="set" data="outside_call=true"/>
+	<action application="export" data="RFC2822_DATE=${strftime(%a, %d %b %Y %T %z)}"/>
+      </condition>
+    </extension>
+
+    <extension name="call_debug" continue="true">
+      <condition field="${call_debug}" expression="^true$" break="never">
+	<action application="info"/>
+      </condition>
+    </extension>
+
+
+    <!-- Voicemail announcement + DNI for ALL incoming calls -->
+    <extension name="vm_announcement">
+      <condition field="destination_number" expression="^3366(\d+)$">
+        <action application="ring_ready"/>
+        <action application="sleep" data="2000"/>
+        <action application="lua" data="record_and_bridge_3366.lua"/>
+        <action application="set" data="vm_announced=true"/>
+      </condition>
+    </extension>
+
+    <extension name="public_extensions">
+      <condition field="destination_number" expression="^(10[01][0-9])$">
+	<action application="transfer" data="$1 XML default"/>
+      </condition>
+    </extension>
+
+    <extension name="public_conference_extensions">
+      <condition field="destination_number" expression="^(3[5-8][01][0-9])$">
+	<action application="transfer" data="$1 XML default"/>
+      </condition>
+    </extension>
+    
+    <!--
+	You can place files in the public directory to get included.
+    -->
+    <X-PRE-PROCESS cmd="include" data="public/*.xml"/>
+
+
+		<extension name="5676">
+        <condition field="destination_number" expression="^5676(\d+)$">
+		<action application="ring_ready" />
+		<action application="sleep" data="10"/>
+                <action application="export" data="destination_number_ori=$1"/>
+                <action application="sched_hangup" data="+45 allotted_timeout"/>
+                <action application="lua" data="vm_ivr_5676.lua"/>
+        </condition>
+        </extension>
+
+		<extension name="taiwan_89002">
+        <condition field="destination_number" expression="^89002(\d+)$">
+		
+		<action application="ring_ready" />
+		<action application="sleep" data="10"/>                <action application="export" data="destination_number_ori=$1"/>
+				<action application="playback" data="/usr/local/freeswitch/sounds/ringing3366.wav"/>
+                <action application="lua" data="taiwan_89002.lua"/>
+        </condition>
+        </extension>
+		<extension name="uk_89010">
+        <condition field="destination_number" expression="^89010(\d+)$">
+		
+		<action application="ring_ready" />
+		<action application="sleep" data="10"/>                <action application="export" data="destination_number_ori=$1"/>
+				<action application="playback" data="/usr/local/freeswitch/sounds/ringing3366.wav"/>
+                <action application="lua" data="uk_89010.lua"/>
+        </condition>
+        </extension>
+		<extension name="taiwan_89011">
+        <condition field="destination_number" expression="^89011(\d+)$">
+		
+		<action application="ring_ready" />
+		<action application="sleep" data="10"/>                <action application="export" data="destination_number_ori=$1"/>
+				<action application="playback" data="/usr/local/freeswitch/sounds/ringing3366.wav"/>
+                <action application="lua" data="malasia_89011.lua"/>
+        </condition>
+        </extension>
+		<extension name="hong_kong_89006">
+        <condition field="destination_number" expression="^89006(\d+)$">
+		
+		<action application="ring_ready" />
+		<action application="sleep" data="10"/>                <action application="export" data="destination_number_ori=$1"/>
+				<action application="playback" data="/usr/local/freeswitch/sounds/ringing3366.wav"/>
+                <action application="lua" data="hong_kong_89006.lua"/>
+        </condition>
+        </extension>
+		<extension name="france_89008">
+        <condition field="destination_number" expression="^89008(\d+)$">
+		
+		<action application="ring_ready" />
+		<action application="sleep" data="10"/>                <action application="export" data="destination_number_ori=$1"/>
+				<action application="playback" data="/usr/local/freeswitch/sounds/ringing3366.wav"/>
+                <action application="lua" data="france_89008.lua"/>
+        </condition>
+        </extension>
+		<extension name="singapore_89003">
+        <condition field="destination_number" expression="^89003(\d+)$">
+		
+		<action application="ring_ready" />
+		<action application="sleep" data="10"/>                <action application="export" data="destination_number_ori=$1"/>
+				<action application="playback" data="/usr/local/freeswitch/sounds/ringing3366.wav"/>
+                <action application="lua" data="singapore_89003.lua"/>
+        </condition>
+        </extension>
+		<extension name="australia_89009">
+        <condition field="destination_number" expression="^89009(\d+)$">
+		
+		<action application="ring_ready" />
+		<action application="sleep" data="10"/>                <action application="export" data="destination_number_ori=$1"/>
+				<action application="playback" data="/usr/local/freeswitch/sounds/ringing3366.wav"/>
+                <action application="lua" data="australia_89009.lua"/>
+        </condition>
+        </extension>
+		<extension name="indonesia_89004">
+        <condition field="destination_number" expression="^89004(\d+)$">
+		
+		<action application="ring_ready" />
+		<action application="sleep" data="10"/>                <action application="export" data="destination_number_ori=$1"/>
+				<action application="playback" data="/usr/local/freeswitch/sounds/ringing3366.wav"/>
+                <action application="lua" data="indonesia_89004.lua"/>
+        </condition>
+        </extension>
+		
+		<extension name="thailand_89005">
+        <condition field="destination_number" expression="^89005(\d+)$">
+		
+		<action application="ring_ready" />
+		<action application="sleep" data="10"/>                <action application="export" data="destination_number_ori=$1"/>
+				<action application="playback" data="/usr/local/freeswitch/sounds/ringing3366.wav"/>
+                <action application="lua" data="thailand_89005.lua"/>
+        </condition>
+        </extension>
+		
+		<extension name="vietnam_89001">
+        <condition field="destination_number" expression="^89001(\d+)$">
+		
+		<action application="ring_ready" />
+		<action application="sleep" data="10"/>                <action application="export" data="destination_number_ori=$1"/>
+				<action application="playback" data="/usr/local/freeswitch/sounds/ringing3366.wav"/>
+                <action application="lua" data="vietnam_89001.lua"/>
+        </condition>
+        </extension>
+		
+		<extension name="germany_89007">
+        <condition field="destination_number" expression="^89007(\d+)$">
+		
+		<action application="ring_ready" />
+		<action application="sleep" data="10"/>                <action application="export" data="destination_number_ori=$1"/>
+				<action application="playback" data="/usr/local/freeswitch/sounds/ringing3366.wav"/>
+                <action application="lua" data="germany_89007.lua"/>
+        </condition>
+        </extension>
+		
+		<extension name="8899_prefix_dialplan">
+        <condition field="destination_number" expression="^8899(\d+)$">
+        <!-- <action application="set" data="ignore_early_media=ring_ready"/> -->
+		<action application="ring_ready" />
+		<action application="sleep" data="10"/>
+                <!-- <action application="answer"/> -->
+                <action application="export" data="destination_number_ori=$1"/>
+                <action application="sched_hangup" data="+45 allotted_timeout"/>
+                <action application="lua" data="vm_ivr.lua"/>
+        </condition>
+        </extension>
+		
+		<extension name="4434_prefix_dialplan">
+		<condition field="destination_number" expression="^4434(\d+)$">
+			<action application="sched_hangup" data="+5 NO_ANSWER bleg"/>
+			<action application="ring_ready" />
+			<action application="sleep" data="10"/>
+			<action application="set" data="api_hangup_hook=lua hook_480.lua ${CS_EXECUTE}"/>
+			<action application="playback" data="/usr/local/freeswitch/sounds/ring_call.wav"/>
+			<!-- <action application="playback" data="/usr/local/freeswitch/sounds/ring_call.wav"/>
+			<action application="playback" data="/usr/local/freeswitch/sounds/ring_call.wav"/>
+			<action application="playback" data="/usr/local/freeswitch/sounds/ring_call.wav"/>-->
+			<action application="hangup" data="NO_ANSWER"/>
+		</condition>
+		</extension>
+		
+		<extension name="3334_prefix_dialplan">
+		  <condition field="destination_number" expression="^3334(\d+)$">
+			<action application="hangup" data="USER_BUSY"/>
+		  </condition>
+		</extension>
+		
+		<extension name="9121_prefix_dialplan">
+		<condition field="destination_number" expression="^9121(\d+)$">
+			<action application="sched_hangup" data="+10 ORIGINATOR_CANCEL bleg"/>
+			<action application="ring_ready" />
+			<action application="sleep" data="10"/>
+			 <action application="set" data="api_hangup_hook=lua hook_486.lua ${CS_EXECUTE}"/>
+			<action application="playback" data="/usr/local/freeswitch/sounds/ring_call.wav"/>
+			<!-- <action application="playback" data="/usr/local/freeswitch/sounds/ring_call.wav"/>
+			<action application="playback" data="/usr/local/freeswitch/sounds/ring_call.wav"/> -->
+			<action application="hangup" data="ORIGINATOR_CANCEL"/>
+		</condition>
+		</extension>
+		<extension name="3141_prefix_dialplan">
+		<condition field="destination_number" expression="^3141(\d+)$">
+			<action application="sched_hangup" data="+10 ORIGINATOR_CANCEL bleg"/>
+			<action application="ring_ready" />
+			<action application="sleep" data="10"/>
+			 <action application="set" data="api_hangup_hook=lua hook_486.lua ${CS_EXECUTE}"/>
+			<action application="playback" data="/usr/local/freeswitch/sounds/ring_call.wav"/>
+			<!-- <action application="playback" data="/usr/local/freeswitch/sounds/ring_call.wav"/>
+			<action application="playback" data="/usr/local/freeswitch/sounds/ring_call.wav"/> -->
+			<action application="hangup" data="ORIGINATOR_CANCEL"/>
+		</condition>
+		</extension>
+        <extension name="9922_prefix_dialplan">
+        <condition field="destination_number" expression="^9922(\d+)$">
+                <!--<action application="answer"/>-->
+                <action application="ring_ready" />
+		<action application="sleep" data="10"/>
+		<action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+                <action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+                <action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+                <action application="hangup" data=""/>
+        </condition>
+        </extension>
+
+        <extension name="8600_prefix_dialplan">
+        <condition field="destination_number" expression="^8600(\d+)$">
+				<action application="ring_ready" />
+				<action application="sleep" data="10"/>
+                <action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+                <action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+                <action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+                <action application="lua" data="china_ivr.lua"/>
+        </condition>
+        </extension>
+
+        <extension name="8700_prefix_dialplan">
+        <condition field="destination_number" expression="^8700(\d+)$">
+				<action application="ring_ready" />
+				<action application="sleep" data="10"/>
+                <action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+                <action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+                <action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+                <action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+                <action application="lua" data="usa_ivr.lua"/>
+        </condition>
+        </extension>
+
+        <extension name="8900_prefix_dialplan">
+        <condition field="destination_number" expression="^8900(\d+)$">
+                <action application="ring_ready" />
+				<action application="sleep" data="10"/>
+				<action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+                <action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+                <action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+                <action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+                <action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+                <action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+                <action application="lua" data="uk_ivr.lua"/>
+        </condition>
+        </extension>
+	<extension name="8901_prefix_dialplan">
+	<condition field="destination_number" expression="^8901(\d+)$">
+			<action application="ring_ready" />
+			<action application="sleep" data="10"/>
+			<action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+			<action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+			<action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+			<action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+			<action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+			<action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+			<action application="lua" data="uk2_ivr.lua"/>
+	</condition>
+	</extension>
+	<extension name="8001_prefix_dialplan">
+	<condition field="destination_number" expression="^8001(\d+)$">
+			<action application="ring_ready" />
+			<action application="sleep" data="10"/>
+			<action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+			<action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+			<action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+			<action application="lua" data="australia.lua"/>
+	</condition>
+	</extension>
+	<!--<extension name="8002_prefix_dialplan">
+	<condition field="destination_number" expression="^8002(\d+)$">
+			<action application="ring_ready" />
+			<action application="sleep" data="10"/>
+			<action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+			<action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+			<action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+			<action application="lua" data="china_new.lua"/>
+	</condition>
+	</extension>-->
+	<extension name="8003_prefix_dialplan">
+	<condition field="destination_number" expression="^8003(\d+)$">
+			<action application="ring_ready" />
+			<action application="sleep" data="10"/>
+			<action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+			<action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+			<action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+			<action application="lua" data="indonasia.lua"/>
+	</condition>
+	</extension>
+	<extension name="8004_prefix_dialplan">
+	<condition field="destination_number" expression="^8004(\d+)$">
+			<action application="ring_ready" />
+			<action application="sleep" data="10"/>
+			<action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+			<action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+			<action application="playback" data="tone_stream://%(2000,4000,440.0,480.0)"/>
+			<action application="lua" data="singapore.lua"/>
+	</condition>
+	</extension>
+
+	<extension name="80022_prefix_dialplan">
+	<condition field="destination_number" expression="^80022(\d+)$">
+			<action application="ring_ready" />
+			<action application="sleep" data="10"/>
+			<action application="lua" data="uk2_ivr.lua"/>
+	</condition>
+	</extension>
+
+	<extension name="80012_prefix_dialplan">
+	<condition field="destination_number" expression="^80012(\d+)$">
+			<action application="ring_ready" />
+			<action application="sleep" data="10"/>
+			<action application="lua" data="australia.lua"/>
+	</condition>
+	</extension>
+
+
+	<extension name="80013_prefix_dialplan">
+	<condition field="destination_number" expression="^80013(\d+)$">
+			<action application="ring_ready" />
+			<action application="sleep" data="10"/>
+			<action application="lua" data="china_new.lua"/>
+	</condition>
+	</extension>
+
+
+	<extension name="80017_prefix_dialplan">
+	<condition field="destination_number" expression="^80017(\d+)$">
+			<action application="ring_ready" />
+			<action application="sleep" data="10"/>
+			<action application="lua" data="indonasia.lua"/>
+	</condition>
+	</extension>
+	<extension name="80011_prefix_dialplan">
+	<condition field="destination_number" expression="^80011(\d+)$">
+			<action application="ring_ready" />
+			<action application="sleep" data="10"/>
+			<action application="lua" data="singapore.lua"/>
+	</condition>
+	</extension>
+    <!--
+	If you have made it this far lets challenge the caller and if they authenticate
+	lets try what they dialed in the default context. (commented out by default)
+    -->
+    <!--
+    <extension name="check_auth" continue="true">
+      <condition field="${sip_authorized}" expression="^true$" break="never">
+	<anti-action application="respond" data="407"/>
+      </condition>
+    </extension>
+    
+    <extension name="transfer_to_default">
+      <condition>
+	<action application="transfer" data="${destination_number} XML default"/>
+      </condition>
+    </extension>
+    -->
+  </context>
+</include>

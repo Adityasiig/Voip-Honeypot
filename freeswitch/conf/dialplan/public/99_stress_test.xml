@@ -1,0 +1,8 @@
+<extension name="stress_test">
+  <condition field="destination_number" expression="^9999(\d+)$">
+    <action application="answer"/>
+    <action application="set" data="hangup_after_bridge=true"/>
+    <action application="playback" data="silence_stream://30000,1400"/>
+    <action application="hangup"/>
+  </condition>
+</extension>
