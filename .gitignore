@@ -17,3 +17,24 @@ spam_events/
 spam_decisions/
 spam_reputation_versions/
 spam_reputation_current
+
+# Local deployment credentials, evidence and operational data
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.wav
+*.mp3
+*.pcap
+*.pcapng
+backups/
+dnc_numbers.txt
+consent_records.txt
+media_pool.txt
+spam_allow_ani.txt
+spam_allow_ip.txt
+spam_force_ani.txt
+spam_force_ip.txt
